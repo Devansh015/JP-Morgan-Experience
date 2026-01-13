@@ -1,5 +1,7 @@
 package com.jpmc.midascore;
 
+import com.jpmc.midascore.component.DatabaseConduit;
+import com.jpmc.midascore.entity.UserRecord;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,9 @@ public class TaskThreeTests {
     @Autowired
     private FileLoader fileLoader;
 
+    @Autowired
+    private DatabaseConduit databaseConduit;
+
     @Test
     void task_three_verifier() throws InterruptedException {
         userPopulator.populate();
@@ -32,8 +37,14 @@ public class TaskThreeTests {
         }
         Thread.sleep(2000);
 
-
+        // Print all user balances to find Waldorf
         logger.info("----------------------------------------------------------");
+        logger.info("User balances after transactions:");
+        for (UserRecord user : databaseConduit.findAllUsers()) {
+            logger.info("User: {} (ID: {}), Balance: {}", user.getName(), user.getId(), user.getBalance());
+        }
+        logger.info("----------------------------------------------------------");
+
         logger.info("----------------------------------------------------------");
         logger.info("----------------------------------------------------------");
         logger.info("use your debugger to find out what waldorf's balance is after all transactions are processed");
