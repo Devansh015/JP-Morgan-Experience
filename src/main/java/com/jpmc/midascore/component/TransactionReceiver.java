@@ -13,9 +13,11 @@ public class TransactionReceiver {
     static final Logger logger = LoggerFactory.getLogger(TransactionReceiver.class);
     
     private final DatabaseConduit databaseConduit;
+    private final IncentiveQuerier incentiveQuerier;
 
-    public TransactionReceiver(DatabaseConduit databaseConduit) {
+    public TransactionReceiver(DatabaseConduit databaseConduit, IncentiveQuerier incentiveQuerier) {
         this.databaseConduit = databaseConduit;
+        this.incentiveQuerier = incentiveQuerier;
     }
 
     @KafkaListener(topics = "${general.kafka-topic}", groupId = "midas")
@@ -24,6 +26,8 @@ public class TransactionReceiver {
         
         // Validate transaction
         if (isValid(transaction)) {
+            float incentiveAmount = Math.max(0f, incentiveQuerier.queryIncentive(transaction).getAmount());
+
             // Update sender's balance
             UserRecord sender = databaseConduit.findUserById(transaction.getSenderId());
             sender.setBalance(sender.getBalance() - transaction.getAmount());
@@ -31,14 +35,15 @@ public class TransactionReceiver {
             
             // Update recipient's balance
             UserRecord recipient = databaseConduit.findUserById(transaction.getRecipientId());
-            recipient.setBalance(recipient.getBalance() + transaction.getAmount());
+            recipient.setBalance(recipient.getBalance() + transaction.getAmount() + incentiveAmount);
             databaseConduit.save(recipient);
             
             // Save transaction record
             TransactionRecord transactionRecord = new TransactionRecord(
                 transaction.getSenderId(),
                 transaction.getRecipientId(),
-                transaction.getAmount()
+                transaction.getAmount(),
+                incentiveAmount
             );
             databaseConduit.saveTransaction(transactionRecord);
             
