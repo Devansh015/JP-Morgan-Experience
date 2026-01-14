@@ -24,6 +24,11 @@ public class DatabaseConduit {
         return userRepository.findById(id);
     }
 
+    public float queryUserBalance(long userId) {
+        UserRecord user = userRepository.findById(userId);
+        return user == null ? 0f : user.getBalance();
+    }
+
     public Iterable<UserRecord> findAllUsers() {
         return userRepository.findAll();
     }
